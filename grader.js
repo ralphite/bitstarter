@@ -66,27 +66,6 @@ var checkHtmlFile = function(htmlfile, checksfile) {
     return out;
 };
 
-var checkUrl = function(url, checksfile) {
-
-    rest.get(url).on('complete', function (result) {
-        if (result instanceof Error) {
-            console.log("Error " + result.message);
-            this.retry(5000); //retry after 5s
-        }
-        else {
-            $ = cheerio.load(result);
-            var checks = loadChecks(checksfile).sort();
-            var out = {};
-            for(var ii in checks) {
-                var present = $(checks[ii]).length > 0;
-                out[checks[ii]] = present;
-            }
-            console.log(JSON.stringify(out, null, 4));
-            return out;
-        }
-    });
-};
-
 var clone = function(fn) {
     // Workaround for commander.js issue.
     // http://stackoverflow.com/a/6772648
@@ -99,14 +78,29 @@ if(require.main == module) {
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
         .option('-u, --url <url>', 'Url of the HTML file to be tested')
         .parse(process.argv);
-        var checkJson;
+    
     if (program.url === undefined) {
-        checkJson = checkHtmlFile(program.file, program.checks);
+        var checkJson = checkHtmlFile(program.file, program.checks);
         var outJson = JSON.stringify(checkJson, null, 4);
         console.log(outJson);
     }
     else {
-        checkJson = checkUrl(program.url, program.checks);
+        rest.get(program.url).on('complete', function (result) {
+            if (result instanceof Error) {
+                console.log("Error " + result.message);
+                this.retry(5000); //retry after 5s
+            }
+            else {
+                $ = cheerio.load(result);
+                var checks = loadChecks(checksfile).sort();
+                var out = {};
+                for(var ii in checks) {
+                    var present = $(checks[ii]).length > 0;
+                    out[checks[ii]] = present;
+                }
+                console.log(JSON.stringify(out, null, 4));
+            }
+        });
     }
 
 } else {
