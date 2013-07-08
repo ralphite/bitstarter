@@ -92,7 +92,7 @@ if(require.main == module) {
             }
             else {
                 $ = cheerio.load(result);
-                var checks = loadChecks(checksfile).sort();
+                var checks = loadChecks(program.checks).sort();
                 var out = {};
                 for(var ii in checks) {
                     var present = $(checks[ii]).length > 0;
